@@ -1,8 +1,11 @@
 <script>
+  export let id;
   let count = 0
   const increment = () => {
     count += 1
   }
+
+  console.log(id)
 </script>
 
 <button on:click={increment}>

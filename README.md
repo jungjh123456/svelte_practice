@@ -178,3 +178,106 @@ console.log(parsed);
 parsed => {token: 'sdfsdfsdf'}
 
 이렇게 할 수 있다.
+
+## svelte redux와 비슷한 전역상태 관리
+
+redux store처럼 전역상태를 관리해주는 store를 만들어 줄 수 있다.
+
+redux와 똑같이 store를 만들어 주면 된다.
+
+```js
+import { writable } from "svelte/store";
+
+const PollStore = writable([{ id: 1, question: "스토어 연습" }]); // 저장소가 쓰기 가능과 같다. 이게 저장소로 생성되도록 혹출하고 데이터 쓰기 가능한 저장소를 전달 할 수 있다. (redux의 store 만들고 호출하는것과 동일) 초기 데이터를 지정할 수 있다.
+
+export default PollStore;
+```
+
+그리고 이걸 Home.svelte에서 사용하면
+
+```js
+import PollStore from "../stores/store.js";
+
+PollStore.subscribe((data) => {
+  console.log(data);
+});
+```
+
+이렇게 subscribe를 통해서 가져와서 볼 수 있다.
+
+그리고 수정을 하기 위해서는 update메서드를 이용하거나 set을 이용하면 된다.
+
+```js
+testStore.update((state) => [...state, { id: Math.max(...state.map((item) => item.id)) + 1, question: "ddd" }]);
+```
+
+그리고 redux와 다르게 mobx처럼 여러 store를 생성할 수 있어서 좋은 거 같다.
+
+하지만 스벨트 또한 다른 컴포넌트로 변경될 때 마다 렌더를 다시 하는데 이거는 나중에 메모리 누수가 발생할 수 있다. 그래서 스벨트도 생명주기가 있다.
+
+onMount 후크를 이용하여 최적화를 할 수 있다.
+
+onMount는 리엑트와 같이 구성요소가 Dom 을 마운트 할 때 발생하므로 Dom에 주입될 때 데이터를 가져와야 하는 경우 데이터베이스에 접근하기에 좋은 시간이다. 즉 axios나 fetch를 이용하여 서버에서 api 호출할 때 이용할 수 있다.
+
+```js
+onMount(() => {
+  console.log("component mounted");
+});
+```
+
+이렇게 생명주기를 하면 첫 마운트때 실행된다.
+
+![CreatePlan](./mdimg/md1.PNG)
+
+onDestroy hook또한 react에서 unMount할때 useEffect에서 return 을 해주면 Dom 에서 제거될 때 실행이 된다.
+즉 svelte도 unMount를 하기 위해서 onDestroy를 해준다.
+
+```js
+onDestroy(() => {
+  console.log("component destroyed");
+});
+```
+
+이제 해야할 일은 store에서 subscribe(구독)을 취소하려면
+
+```js
+const unsub = PollStore.subscribe((data) => {
+  // console.log(data.a)
+  a = data.a;
+});
+```
+
+이 unSub를 호출하는 것이다.
+
+```js
+onDestroy(() => {
+  unsub();
+});
+```
+
+다른 컴포넌트나 다른 페이지로 이동할 때 스토어를 구독을 취소하므로써 메모리 누수를 막을 수 있다고 한다.
+
+그리고 이것보다 더 쉬운 방법이 있다고 한다.
+
+자동으로 구독 취소하는 쉬운 방법은 그냥 직접 html에 바로 접근하면 된다고 한다.
+
+### readable
+
+readable은 외부에서 값을 설정할 수 없는 저장소를 생성한다.
+첫번째 인수는 저장소의 초기값이고 두 번째 인수 .readable은 writable 두번때 인수와 같다.
+
+```js
+const time = readable(null, (set) => {
+  set(new Date());
+
+  const interval = setInterval(() => {
+    set(new Date());
+  }, 1000);
+
+  return () => clearInterval(interval);
+});
+```
+
+이런식으로 설정 할 수 있다.
+
+이렇게 store에 지정하고 외부에서 읽기 형식으로 만 가져올 수 있다. (시간 같은 걸 설정 할 수 있는거 같다.)

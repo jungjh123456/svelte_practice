@@ -7,7 +7,8 @@
   async function onSubmit(){
     onSuccess('some message');
   }
-   import queryString from "query-string";
+import queryString from "query-string";
+import Counter from "../lib/Counter.svelte";
 
   let parsed = {};
 
@@ -15,13 +16,12 @@
     parsed = queryString.parse(window.location.search);
   }
   console.log(parsed)
+console.log(id)
 </script>
-
 <h1>Avout</h1>
-
-
 <h2>{id ?? 'dd'}</h2>
 <h2>{parsed.token}</h2>
+<Counter id={10}/>
 
 <style>
     h1 {
